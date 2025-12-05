@@ -40,7 +40,7 @@ def main():
         # Checks on normal grid points
         if d <= 4:
             return True
-        elif (d <= 11) and (that_other_connection_thingy(a, b) <= 2):
+        elif (d <= 11) and (that_other_connection_thingy(a, b) <= 1):
             return True
         return False
 
