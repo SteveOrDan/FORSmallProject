@@ -30,13 +30,36 @@ def main():
     with open(csv_path, newline="") as f:
         filtered = (line for line in f if not line.lstrip().startswith("#"))  # skip comment lines
         reader = csv.reader(filtered)
-        _ = next(reader, None)  # remove the line with ["x", "y", "z"] labels
 
-        for idx, row in enumerate(reader, start=1):
-            if not row:  # skip empty lines
+        # Peek the first row
+        first = next(reader, None)
+        if first is None:
+            raise ValueError("CSV has no data!")
+
+        # Detect if first row is a header
+        is_header = (
+                len(first) >= 3 and
+                first[0].strip().lower() == "x" and
+                first[1].strip().lower() == "y" and
+                first[2].strip().lower() == "z"
+        )
+
+        print(f"Header detected: {is_header}")
+
+        # If first row is data, process it immediately
+        idx = 1
+        if not is_header:
+            x, y, z = map(float, first[:3])
+            coords[idx] = (x, y, z)
+            idx += 1
+
+        # Process the rest
+        for row in reader:
+            if not row:
                 continue
             x, y, z = map(float, row[:3])
             coords[idx] = (x, y, z)
+            idx += 1
 
     # At this point I have coords (vertex id -> (x,y,z)), I need to compute the edges and their costs
     # Define connection rules
