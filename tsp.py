@@ -93,6 +93,7 @@ def main():
     # Now we should have everything we need to build the model
 
     m = mip.Model(sense=mip.MINIMIZE)
+    m.threads = 16
     m.verbose = 1
 
     num_drones = 4
@@ -102,6 +103,7 @@ def main():
     for (i, j) in arcs:
         for d in range(num_drones):
             x[i, j, d] = m.add_var(var_type=mip.BINARY)
+            # x[i, j, d] = 1 if arc (i, j) is used by drone d, 0 otherwise
 
     # Constraints
     grid_nodes = [i for i in V if i != 0]  # Except for the base node
@@ -111,7 +113,8 @@ def main():
     u = {}
     for i in grid_nodes:
         for d in range(num_drones):
-            u[i, d] = m.add_var(var_type=mip.CONTINUOUS, lb=1, ub=N_grid)
+            u[i, d] = m.add_var(var_type=mip.CONTINUOUS, lb=0, ub=N_grid)
+
 
     # Number of drones leaving and entering a node must be 1
     for i in grid_nodes:
@@ -120,6 +123,7 @@ def main():
 
         # Outgoing drones
         m += (mip.xsum(x[i, j, d] for (i2, j) in arcs if i2 == i for d in range(num_drones)) == 1)
+
 
     # Constraint for drones leaving and entering the base
     for d in range(num_drones):
@@ -140,6 +144,12 @@ def main():
         for (i, j) in arcs:
             if i != 0 and j != 0:  # only grid nodes
                 m += u[i, d] - u[j, d] + N_grid * x[i, j, d] <= N_grid - 1
+
+    # MTZ: u[i,d] must be 0 if drone d does NOT visit node i
+    for i in grid_nodes:
+        for d in range(num_drones):
+            incoming = mip.xsum(x[j, i, d] for (j, i2) in arcs if i2 == i)
+            m += u[i, d] <= N_grid * incoming
 
     # Objective: minimize the maximum route length among drones
     T = [m.add_var(lb=0.0) for d in range(num_drones)]
@@ -178,6 +188,7 @@ def main():
 
     if status in (mip.OptimizationStatus.OPTIMAL,
                   mip.OptimizationStatus.FEASIBLE):
+        print(f"\n")
         reconstruct_and_print_routes(arcs, x, num_drones)
     else:
         print("No feasible solution")
