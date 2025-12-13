@@ -186,10 +186,10 @@ def main():
         a = coords[i]
         b = coords[j]
 
-        horizontal_dist = math.sqrt((a[0] - b[0]) ** 2 + (a[2] - b[2]) ** 2)
-        vertical_dist = abs(a[1] - b[1])
+        horizontal_dist = math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
+        vertical_dist = abs(a[2] - b[2])
 
-        return max(horizontal_dist / 1.5, vertical_dist / (1 if a[1] < b[1] else 2))
+        return max((horizontal_dist / 1.5), (vertical_dist / (1 if a[2] < b[2] else 2)))
 
     V = list(coords.keys())  # nodes: 0...N, 0 is base
     arcs = []
@@ -237,13 +237,21 @@ def main():
 
     print("Adding constraint number of drones leaving and entering a node must be 1")
     # Number of drones leaving and entering a node must be 1
+    '''
     for i in grid_nodes:
         # Incoming drones
         m += (mip.xsum(x[j, i, d] for (j, i2) in arcs if i2 == i for d in range(num_drones)) == 1)
 
         # Outgoing drones
         m += (mip.xsum(x[i, j, d] for (i2, j) in arcs if i2 == i for d in range(num_drones)) == 1)
-
+    '''
+    # Each grid node must be visited exactly once (by exactly one drone)
+    for i in grid_nodes:
+        m += mip.xsum(
+            x[j, i, d]
+            for (j, i2) in arcs if i2 == i
+            for d in range(num_drones)
+        ) == 1
     print("Adding constraints for drones leaving and entering the base...")
     # Constraint for drones leaving and entering the base:
     # if y[d] = 1: one departure and one return
