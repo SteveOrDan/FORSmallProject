@@ -347,7 +347,7 @@ def main():
             print(f"T[{d + 1}] = {T[d].x:.4f}")
 
         # Uncomment for plotting (Just do it for Building 4 to avoid explosions)
-        # plot_solution(coords, arcs, x, num_drones)
+        plot_solution(coords, arcs, x, num_drones)
     else:
         print("No feasible solution")
 
